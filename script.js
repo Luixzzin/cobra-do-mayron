@@ -5,8 +5,13 @@ const overlay = document.getElementById("overlay");
 const scoreEl = document.getElementById("score");
 const levelEl = document.getElementById("level");
 
-canvas.width = 550;
-canvas.height = 550;
+// Ajustar tamanho REAL do canvas para o tamanho visual (responsivo)
+function adjustCanvas() {
+  canvas.width = canvas.clientWidth;
+  canvas.height = canvas.clientHeight;
+}
+adjustCanvas();
+window.addEventListener("resize", adjustCanvas);
 
 const GRID = 25;
 
@@ -15,7 +20,7 @@ let score, level, speed;
 let running = false;
 let loop;
 
-// Reseta tudo
+// Reset geral
 function reset() {
   snake = [{ x: 10, y: 10 }];
   direction = { x: 1, y: 0 };
@@ -33,7 +38,7 @@ function reset() {
   overlay.classList.add("hidden");
 }
 
-// Gera comida
+// Gerar comida
 function randomFood() {
   return {
     x: Math.floor(Math.random() * (canvas.width / GRID)),
@@ -41,7 +46,7 @@ function randomFood() {
   };
 }
 
-// Game Loop
+// Loop principal
 function tick() {
   if (!running) return;
 
@@ -52,18 +57,21 @@ function tick() {
     y: snake[0].y + direction.y
   };
 
-  // teletransporte nas bordas
-  head.x = (head.x + canvas.width / GRID) % (canvas.width / GRID);
-  head.y = (head.y + canvas.height / GRID) % (canvas.height / GRID);
+  const maxX = Math.floor(canvas.width / GRID);
+  const maxY = Math.floor(canvas.height / GRID);
 
-  // colisão
-  if (snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+  // Teletransporte
+  head.x = (head.x + maxX) % maxX;
+  head.y = (head.y + maxY) % maxY;
+
+  // Colisão com si mesmo
+  if (snake.some(seg => seg.x === head.x && seg.y === head.y)) {
     return gameOver();
   }
 
   snake.unshift(head);
 
-  // comer
+  // Comer fruta
   if (head.x === food.x && head.y === food.y) {
     score += 10;
     scoreEl.textContent = score;
@@ -71,7 +79,7 @@ function tick() {
     if (score % 50 === 0) {
       level++;
       levelEl.textContent = level;
-      speed += 1;
+      speed++;
     }
 
     food = randomFood();
@@ -89,18 +97,18 @@ function tick() {
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // comida
+  // Comida
   ctx.fillStyle = "#ff0066";
-  ctx.shadowBlur = 25;
+  ctx.shadowBlur = 30;
   ctx.shadowColor = "#ff0066";
   ctx.fillRect(food.x * GRID, food.y * GRID, GRID - 2, GRID - 2);
 
   ctx.shadowBlur = 0;
 
-  // cobra
-  snake.forEach((part, index) => {
-    ctx.fillStyle = index === 0 ? "#00eaff" : "#0088aa";
-    ctx.shadowBlur = index === 0 ? 25 : 10;
+  // Cobra
+  snake.forEach((part, i) => {
+    ctx.fillStyle = i === 0 ? "#00ffff" : "#0099bb";
+    ctx.shadowBlur = i === 0 ? 25 : 10;
     ctx.shadowColor = "#00eaff";
 
     ctx.fillRect(part.x * GRID, part.y * GRID, GRID - 2, GRID - 2);
@@ -109,15 +117,17 @@ function draw() {
   ctx.shadowBlur = 0;
 }
 
+// Game over
 function gameOver() {
   running = false;
   clearTimeout(loop);
 
-  overlay.classList.remove("hidden");
   overlay.querySelector(".title").textContent = "GAME OVER";
+  overlay.querySelector(".sub").textContent = "Pressione ESPAÇO para reiniciar";
+  overlay.classList.remove("hidden");
 }
 
-// controles
+// Controles
 window.addEventListener("keydown", (e) => {
   const k = e.key.toLowerCase();
 
@@ -133,10 +143,9 @@ window.addEventListener("keydown", (e) => {
   };
 
   if (map[k]) {
-    const dir = map[k];
-
-    if (!(dir.x === -direction.x && dir.y === -direction.y)) {
-      nextDir = dir;
+    const d = map[k];
+    if (!(d.x === -direction.x && d.y === -direction.y)) {
+      nextDir = d;
     }
   }
 
@@ -146,6 +155,5 @@ window.addEventListener("keydown", (e) => {
   }
 });
 
-// inicia automaticamente
-reset();
-tick();
+// Começa parado na tela inicial esperando ESPAÇO
+overlay.classList.remove("hidden");
